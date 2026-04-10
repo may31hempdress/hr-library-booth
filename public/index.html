@@ -34,10 +34,11 @@ main { max-width: 860px; margin: 0 auto; padding: 24px 16px 60px; }
 .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; font-size: 11px; color: var(--text-muted); }
 .legend-item { display: flex; align-items: center; gap: 5px; }
 .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
-.cal-wrap { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; box-shadow: var(--shadow); }
+.cal-wrap { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden; }
+.cal-scroll { overflow-y: auto; max-height: 65vh; }
 .cal-grid { display: grid; grid-template-columns: 52px repeat(7, 1fr); }
-.cal-head-empty { background: #fafaf8; border-bottom: 1px solid var(--border); }
-.cal-head { background: #fafaf8; border-bottom: 1px solid var(--border); border-left: 1px solid var(--border); text-align: center; padding: 8px 4px; font-size: 11px; color: var(--text-muted); font-weight: 600; line-height: 1.5; }
+.cal-head-empty { background: #fafaf8; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
+.cal-head { background: #fafaf8; border-bottom: 1px solid var(--border); border-left: 1px solid var(--border); text-align: center; padding: 8px 4px; font-size: 11px; color: var(--text-muted); font-weight: 600; line-height: 1.5; position: sticky; top: 0; z-index: 10; }
 .cal-head.today { color: var(--green-dark); }
 .cal-head.sat { color: #2A6A8A; }
 .cal-head.sun { color: #A85070; }
@@ -100,7 +101,7 @@ main { max-width: 860px; margin: 0 auto; padding: 24px 16px 60px; }
   <div class="header-sub">予約ページ</div>
 </header>
 <main>
-  <h1 class="page-title">WEBミーティング専用ブースの空き時間を選んでご予約ください</h1>
+  <h1 class="page-title">空き時間を選んでご予約ください</h1>
   <p class="page-sub">空いているブースをクリックして、Timerexで予約を確定してください。</p>
   <ul class="desc-list">
     <li>WEBミーティングの時間のみご利用ください。</li>
@@ -132,7 +133,9 @@ main { max-width: 860px; margin: 0 auto; padding: 24px 16px 60px; }
       <span class="legend-item"><span class="legend-dot" style="background:#9FE1CB"></span>2部屋空き</span>
     </div>
     <div class="cal-wrap">
-      <div class="cal-grid" id="cal-grid"></div>
+      <div class="cal-scroll">
+        <div class="cal-grid" id="cal-grid"></div>
+      </div>
     </div>
     <p class="last-updated" id="last-updated"></p>
   </div>
@@ -439,7 +442,7 @@ document.getElementById('overlay').addEventListener('click', function(e) { if(e.
 // ============================================================
 (async function() {
   var detail = document.getElementById('loading-detail');
-  detail.textContent = '全メンバーの空き時間を並列取得中...';
+  detail.textContent = '全ブースの空き時間を並列取得中...';
   try {
     slotMap = await fetchAllSlots();
     var total = 0;
