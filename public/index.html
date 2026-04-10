@@ -104,7 +104,7 @@ main { max-width: 860px; margin: 0 auto; padding: 24px 16px 60px; }
   <p class="page-sub">空いているブースをクリックして、Timerexで予約を確定してください。</p>
   <ul class="desc-list">
     <li>WEBミーティングの時間のみご利用ください。</li>
-    <li>連続で1時間を超えて利用される場合は再度ご予約をお願いいたします。</li>
+    <li>連続で1時間を超えてご利用される場合は再度ご予約をお願いいたします。</li>
     <li>予約画面ではお名前の欄に「ニックネーム＠会員番号（HR00000）」をご記入くださいませ。</li>
     <li>※仕様上、会社名入力欄がありますが、入力不要です</li>
   </ul>
@@ -358,7 +358,7 @@ function renderCalendar() {
       if (count === 0 || isPast) {
         html += '<div class="cal-cell empty"></div>';
       } else {
-        var cls2 = count===1?'a1':'a5plus';
+        var cls2 = count===1?'a1':'a3';
         var idsEnc = encodeURIComponent(JSON.stringify(ids));
         var dateStr = (dd.getMonth()+1) + '/' + dd.getDate();
         html += '<div class="cal-cell ' + cls2 + '" data-ids="' + idsEnc + '" data-date="' + dateStr + '" data-day="' + DAY_JP[di2] + '" data-time="' + time + '" onmouseenter="showTip(event,this)" onmouseleave="hideTip()" onclick="openModal(this)">' + count + '部屋</div>';
