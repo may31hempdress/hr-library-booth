@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人事図書館WEBミーティング専用ブース予約ページ</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f7f6f3; --surface: #ffffff;
+  --border: rgba(0,0,0,.1); --border-strong: rgba(0,0,0,.18);
+  --text: #1a1a1a; --text-muted: #6b6b6b; --text-faint: #9e9e9e;
+  --green-dark: #0F6E56; --green-mid: #1D9E75;
+  --green-light: #5DCAA5; --green-pale: #E1F5EE;
+  --radius: 10px; --shadow: 0 2px 12px rgba(0,0,0,.08);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,.14);
+}
+body { font-family: 'Hiragino Sans', 'Noto Sans JP', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
+.logo { font-size: 15px; font-weight: 600; }
+.header-sub { font-size: 12px; color: var(--text-muted); }
+main { max-width: 860px; margin: 0 auto; padding: 24px 16px 60px; }
+.page-title { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+.page-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
+#loading { text-align: center; padding: 60px 0; color: var(--text-muted); font-size: 14px; }
+.spinner { width: 28px; height: 28px; border: 3px solid var(--border); border-top-color: var(--green-mid); border-radius: 50%; animation: spin .7s linear infinite; margin: 0 auto 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-detail { font-size: 12px; color: var(--text-faint); margin-top: 8px; }
+.week-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 8px; }
+.nav-btn { background: var(--surface); border: 1px solid var(--border-strong); border-radius: 8px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--text); transition: background .12s; }
+.nav-btn:hover { background: #f0efec; }
+.nav-btn:disabled { opacity: .35; cursor: not-allowed; }
+.week-label { font-size: 14px; font-weight: 600; text-align: center; flex: 1; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; font-size: 11px; color: var(--text-muted); }
+.legend-item { display: flex; align-items: center; gap: 5px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+.cal-wrap { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; box-shadow: var(--shadow); }
+.cal-grid { display: grid; grid-template-columns: 52px repeat(7, 1fr); }
+.cal-head-empty { background: #fafaf8; border-bottom: 1px solid var(--border); }
+.cal-head { background: #fafaf8; border-bottom: 1px solid var(--border); border-left: 1px solid var(--border); text-align: center; padding: 8px 4px; font-size: 11px; color: var(--text-muted); font-weight: 600; line-height: 1.5; }
+.cal-head.today { color: var(--green-dark); }
+.cal-head.sat { color: #2A6A8A; }
+.cal-head.sun { color: #A85070; }
+.time-label { font-size: 10px; color: var(--text-faint); display: flex; align-items: flex-start; justify-content: flex-end; padding: 4px 6px 0 0; height: 40px; border-top: 1px solid #f0efec; }
+.cal-cell { height: 40px; border-top: 1px solid #f0efec; border-left: 1px solid #f0efec; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; transition: transform .1s, filter .1s; cursor: default; }
+.cal-cell.empty { background: transparent; }
+.cal-cell.a1 { background: var(--green-pale); color: var(--green-dark); cursor: pointer; }
+.cal-cell.a2 { background: #9FE1CB; color: #04342C; cursor: pointer; }
+.cal-cell.a3 { background: var(--green-light); color: #04342C; cursor: pointer; }
+.cal-cell.a4 { background: #2DB88A; color: #fff; cursor: pointer; }
+.cal-cell.a5plus { background: var(--green-mid); color: #fff; cursor: pointer; }
+.cal-cell.a1:hover,.cal-cell.a2:hover,.cal-cell.a3:hover,.cal-cell.a4:hover,.cal-cell.a5plus:hover { filter: brightness(.92); transform: scale(1.06); z-index: 1; }
+#tooltip { position: fixed; background: var(--surface); border: 1px solid var(--border-strong); border-radius: 10px; padding: 10px 13px; font-size: 12px; box-shadow: var(--shadow-lg); pointer-events: none; z-index: 500; min-width: 150px; max-width: 240px; opacity: 0; transform: translateY(5px); transition: opacity .13s, transform .13s; }
+#tooltip.show { opacity: 1; transform: translateY(0); }
+.tt-header { font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 7px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+.tt-member { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; }
+.tt-avatar { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; flex-shrink: 0; }
+.tt-name { font-size: 12px; }
+.tt-cal { font-size: 10px; color: var(--text-faint); }
+.tt-hint { font-size: 10px; color: var(--text-faint); margin-top: 7px; padding-top: 6px; border-top: 1px solid var(--border); }
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; z-index: 900; opacity: 0; pointer-events: none; transition: opacity .18s; }
+.overlay.open { opacity: 1; pointer-events: all; }
+.modal { background: var(--surface); border-radius: 16px; padding: 22px; width: min(360px, 93vw); box-shadow: var(--shadow-lg); transform: translateY(8px); transition: transform .18s; }
+.overlay.open .modal { transform: translateY(0); }
+.modal-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2px; }
+.modal-title { font-size: 16px; font-weight: 600; }
+.modal-sub { font-size: 12px; color: var(--text-muted); margin-bottom: 14px; }
+.close-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted); }
+.assignee { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 9px; cursor: pointer; border: 1.5px solid transparent; transition: all .12s; margin-bottom: 7px; }
+.assignee:hover { background: #f7f6f3; }
+.assignee.selected { background: var(--green-pale); border-color: var(--green-mid); }
+.a-avatar { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+.a-name { font-size: 13px; font-weight: 600; }
+.a-cal { font-size: 11px; color: var(--text-muted); }
+.check { margin-left: auto; color: var(--green-mid); font-size: 18px; opacity: 0; transition: opacity .1s; }
+.assignee.selected .check { opacity: 1; }
+.go-btn { width: 100%; padding: 12px; border: none; border-radius: 9px; background: var(--green-mid); color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 6px; transition: background .12s; }
+.go-btn:hover { background: var(--green-dark); }
+.go-btn:disabled { background: #ccc; color: #888; cursor: not-allowed; }
+.last-updated { text-align: center; font-size: 11px; color: var(--text-faint); margin-top: 12px; }
+.refresh-btn { background: none; border: none; color: var(--green-dark); font-size: 11px; cursor: pointer; text-decoration: underline; }
+.desc-list { margin-bottom: 20px; padding-left: 0; list-style: none; font-size: 13px; color: var(--text-muted); line-height: 1.9; }
+.desc-list li::before { content: "・"; }
+.desc-note { color: var(--text-faint); font-size: 12px; }
+.notice { display: flex; align-items: flex-start; gap: 10px; background: #FFF9EC; border: 1px solid #F5D88A; border-radius: 8px; padding: 12px 14px; margin-bottom: 20px; font-size: 13px; color: #5a4a1a; line-height: 1.7; }
+.notice-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.notice strong { color: #3a2e00; }
+#error-msg { display: none; background: #fff3f3; border: 1px solid #f5c1c1; border-radius: 8px; padding: 14px 16px; font-size: 13px; color: #a32d2d; margin-bottom: 16px; }
+@media (max-width: 600px) {
+  .cal-grid { grid-template-columns: 40px repeat(7, 1fr); }
+  .time-label { font-size: 9px; padding: 4px 3px 0 0; }
+  .cal-cell { height: 36px; font-size: 9px; }
+  .cal-head { font-size: 10px; padding: 6px 2px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">人事図書館WEBミーティング専用ブース</div>
+  <div class="header-sub">予約ページ</div>
+</header>
+<main>
+  <h1 class="page-title">WEBミーティング専用ブースを予約する</h1>
+  <p class="page-sub">空いているブースをクリックして、Timerexで予約を確定してください。</p>
+  <ul class="desc-list">
+    <li>WEBミーティングの時間のみご指定ください。</li>
+    <li>連続で１時間を超えて利用される場合は再度ご予約をお願いいたします。</li>
+    <li>予約画面ではお名前の欄に「ニックネーム＠会員番号（HR00000）」をご記入くださいませ。</li>
+    <li><span class="desc-note">※仕様上、会社名入力欄がありますが、入力不要です</span></li>
+  </ul>
+  <div class="notice">
+    <span class="notice-icon">ℹ️</span>
+    <div>
+      全メンバーの空き時間を順番に読み込むため、<strong>表示まで少しお時間がかかります</strong>（目安：30秒〜1分）。<br>
+      空き時間が少ない・表示されない場合は、ページ下部の「<strong>更新</strong>」ボタンを押してみてください。
+    </div>
+  </div>
+  <div id="error-msg"></div>
+  <div id="loading">
+    <div class="spinner"></div>
+    空き時間を読み込み中です...
+    <div class="loading-detail" id="loading-detail">各メンバーのTimerexを確認しています</div>
+  </div>
+  <div id="calendar-area" style="display:none">
+    <div class="week-nav">
+      <button class="nav-btn" id="btn-prev" onclick="changeWeek(-1)">← 前週</button>
+      <span class="week-label" id="week-label"></span>
+      <button class="nav-btn" id="btn-next" onclick="changeWeek(1)">次週 →</button>
+    </div>
+    <div class="legend">
+      <span class="legend-item"><span class="legend-dot" style="background:var(--green-pale);border:1px solid #9FE1CB"></span>1名空き</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#9FE1CB"></span>2名空き</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--green-light)"></span>3〜4名空き</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--green-mid)"></span>5名以上</span>
+    </div>
+    <div class="cal-wrap">
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+    <p class="last-updated" id="last-updated"></p>
+  </div>
+</main>
+
+<div id="tooltip">
+  <div class="tt-header" id="tt-header"></div>
+  <div id="tt-body"></div>
+  <div class="tt-hint">クリックして予約する</div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="modal-top">
+      <div class="modal-title" id="modal-title"></div>
+      <button class="close-btn" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-sub">ブースを選択してください</div>
+    <div id="assignee-list"></div>
+    <button class="go-btn" id="go-btn" disabled onclick="goToTimerex()">Timerexで予約する →</button>
+  </div>
+</div>
+
+<script>
+var MEMBERS = [
+  { id:1, name:'ブース1', calName:'ブース1', initial:'1', color:'#185FA5', bg:'#E6F1FB', timerexUrl:'https://timerex.net/s/hrlibrarybooth1_a734/3ea44f9f/' },
+  { id:2, name:'ブース2', calName:'ブース2', initial:'2', color:'#0F6E56', bg:'#E1F5EE', timerexUrl:'https://timerex.net/s/hrlibrarybooth2_2a90/bd0414a2/' },
+];
+
+var WEEKS_AHEAD = 3;
+
+// ============================================================
+// 日付ユーティリティ
+// ============================================================
+function formatDate(d) {
+  var y = d.getFullYear();
+  var m = ('0' + (d.getMonth()+1)).slice(-2);
+  var day = ('0' + d.getDate()).slice(-2);
+  return y + m + day;
+}
+
+function parseSlotDatetime(str) {
+  return str.replace(/\//g, '-').replace(' ', 'T').substring(0, 16);
+}
+
+function getMondayOfWeek(offsetWeeks) {
+  var t = new Date();
+  var m = new Date(t);
+  m.setHours(0,0,0,0);
+  m.setDate(t.getDate() - ((t.getDay() + 6) % 7) + offsetWeeks * 7);
+  return m;
+}
+
+// ============================================================
+// 単一リクエスト（プロキシ経由）- リトライなし・高速版
+// ============================================================
+var PROXIES = [
+  function(u) { return 'https://api.allorigins.win/get?url=' + encodeURIComponent(u); },
+  function(u) { return 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u); },
+];
+var proxyIndex = 0;
+
+async function fetchOneRange(timerexUrl, startDate, endDate) {
+  var base = timerexUrl.replace(/\/$/, '');
+  var apiUrl = base + '/calendar_week?locale=ja&timezone=Asia%2FTokyo&start_date=' + startDate + '&end_date=' + endDate;
+
+  // 2つのプロキシを並列で投げて、先に成功した方を使う
+  var p1 = fetchViaProxy(apiUrl, 0);
+  var p2 = fetchViaProxy(apiUrl, 1);
+
+  try {
+    var json = await Promise.any([p1, p2]);
+    return extractSlots(json);
+  } catch(e) {
+    return [];
+  }
+}
+
+async function fetchViaProxy(apiUrl, idx) {
+  var proxyUrl = PROXIES[idx](apiUrl);
+  var res = await fetch(proxyUrl);
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  var data = await res.json();
+  var jsonStr = typeof data.contents !== 'undefined' ? data.contents : JSON.stringify(data);
+  var json = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
+  if (!json || !json.slots) throw new Error('no slots');
+  return json;
+}
+
+function extractSlots(json) {
+  var slots = [];
+  if (!json || !json.slots) return slots;
+  var days = Object.keys(json.slots);
+  for (var i = 0; i < days.length; i++) {
+    var daySlots = json.slots[days[i]];
+    for (var j = 0; j < daySlots.length; j++) {
+      var s = daySlots[j];
+      if (!s.disable && s.start_datetime) {
+        slots.push(parseSlotDatetime(s.start_datetime));
+      }
+    }
+  }
+  return slots;
+}
+
+// ============================================================
+// 全リクエストを完全並列で一気に投げる
+// ============================================================
+async function fetchAllSlots() {
+  var slotMap = {};
+
+  // 取得するレンジ一覧を作成（7人 × 3週 × 月〜金/土〜日 = 42リクエスト）
+  var tasks = [];
+  for (var w = 0; w < WEEKS_AHEAD; w++) {
+    var mon = getMondayOfWeek(w);
+    var fri = new Date(mon); fri.setDate(mon.getDate() + 4);
+    var sat = new Date(mon); sat.setDate(mon.getDate() + 5);
+    var sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+
+    for (var mi = 0; mi < MEMBERS.length; mi++) {
+      (function(member, startMon, endFri, startSat, endSun) {
+        tasks.push(
+          fetchOneRange(member.timerexUrl, formatDate(startMon), formatDate(endFri))
+            .then(function(slots) { return { memberId: member.id, slots: slots }; })
+        );
+        tasks.push(
+          fetchOneRange(member.timerexUrl, formatDate(startSat), formatDate(endSun))
+            .then(function(slots) { return { memberId: member.id, slots: slots }; })
+        );
+      })(MEMBERS[mi], mon, fri, sat, sun);
+    }
+  }
+
+  // 全タスクを同時並列で実行
+  var results = await Promise.allSettled(tasks);
+
+  for (var i = 0; i < results.length; i++) {
+    if (results[i].status !== 'fulfilled') continue;
+    var memberId = results[i].value.memberId;
+    var slots = results[i].value.slots;
+    for (var j = 0; j < slots.length; j++) {
+      var dt = slots[j];
+      if (!slotMap[dt]) slotMap[dt] = [];
+      if (slotMap[dt].indexOf(memberId) === -1) {
+        slotMap[dt].push(memberId);
+      }
+    }
+  }
+
+  return slotMap;
+}
+
+// ============================================================
+// カレンダー描画
+// ============================================================
+var DAY_JP = ['月','火','水','木','金','土','日'];
+var TIMES = [];
+for (var h = 8; h <= 23; h++) {
+  TIMES.push(('0'+h).slice(-2) + ':00');
+  if (h < 23) TIMES.push(('0'+h).slice(-2) + ':30');
+}
+
+var weekOffset = 0;
+var slotMap = {};
+var selectedMemberId = null;
+
+function getWeekDates(off) {
+  var m = getMondayOfWeek(off);
+  var result = [];
+  for (var i = 0; i < 7; i++) {
+    var d = new Date(m); d.setDate(m.getDate() + i); result.push(d);
+  }
+  return result;
+}
+
+function toKey(date, time) {
+  var y = date.getFullYear();
+  var mo = ('0'+(date.getMonth()+1)).slice(-2);
+  var d = ('0'+date.getDate()).slice(-2);
+  return y + '-' + mo + '-' + d + 'T' + time;
+}
+
+function renderCalendar() {
+  var dates = getWeekDates(weekOffset);
+  var today = new Date();
+  var fmt = function(d) { return (d.getMonth()+1) + '/' + d.getDate(); };
+  document.getElementById('week-label').textContent = fmt(dates[0]) + ' (月) 〜 ' + fmt(dates[6]) + ' (日)';
+  document.getElementById('btn-prev').disabled = weekOffset <= 0;
+  document.getElementById('btn-next').disabled = weekOffset >= WEEKS_AHEAD - 1;
+
+  var todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+  // 空き枠がある最初〜最後の時間インデックスを求める
+  var firstTi = -1, lastTi = -1;
+  for (var ti2 = 0; ti2 < TIMES.length; ti2++) {
+    for (var di3 = 0; di3 < 7; di3++) {
+      if (dates[di3] >= todayStart && (slotMap[toKey(dates[di3], TIMES[ti2])] || []).length > 0) {
+        if (firstTi === -1) firstTi = ti2;
+        lastTi = ti2;
+        break;
+      }
+    }
+  }
+  if (firstTi === -1) { firstTi = 0; lastTi = TIMES.length - 1; }
+
+  var html = '<div class="cal-head-empty"></div>';
+  for (var di = 0; di < 7; di++) {
+    var d = dates[di];
+    var isToday = d.toDateString() === today.toDateString();
+    var cls = isToday ? ' today' : (di === 5 ? ' sat' : (di === 6 ? ' sun' : ''));
+    html += '<div class="cal-head' + cls + '">' + DAY_JP[di] + '<br>' + (d.getMonth()+1) + '/' + d.getDate() + '</div>';
+  }
+
+  for (var ti = firstTi; ti <= lastTi; ti++) {
+    var time = TIMES[ti];
+    html += '<div class="time-label">' + time + '</div>';
+    for (var di2 = 0; di2 < 7; di2++) {
+      var dd = dates[di2];
+      var key = toKey(dd, time);
+      var ids = slotMap[key] || [];
+      var count = ids.length;
+      var isPast = dd < todayStart;
+      if (count === 0 || isPast) {
+        html += '<div class="cal-cell empty"></div>';
+      } else {
+        var cls2 = count===1?'a1':count===2?'a2':count<=4?'a3':count<=6?'a4':'a5plus';
+        var idsEnc = encodeURIComponent(JSON.stringify(ids));
+        var dateStr = (dd.getMonth()+1) + '/' + dd.getDate();
+        html += '<div class="cal-cell ' + cls2 + '" data-ids="' + idsEnc + '" data-date="' + dateStr + '" data-day="' + DAY_JP[di2] + '" data-time="' + time + '" onmouseenter="showTip(event,this)" onmouseleave="hideTip()" onclick="openModal(this)">' + count + '名</div>';
+      }
+    }
+  }
+  document.getElementById('cal-grid').innerHTML = html;
+}
+
+function changeWeek(dir) { weekOffset += dir; renderCalendar(); }
+
+// ツールチップ
+var tip = document.getElementById('tooltip');
+function showTip(e, el) {
+  var ids = JSON.parse(decodeURIComponent(el.dataset.ids));
+  var ms = ids.map(function(id) { for(var i=0;i<MEMBERS.length;i++){if(MEMBERS[i].id===id)return MEMBERS[i];} }).filter(Boolean);
+  document.getElementById('tt-header').textContent = el.dataset.date + ' (' + el.dataset.day + ') ' + el.dataset.time + '〜';
+  document.getElementById('tt-body').innerHTML = ms.map(function(m) {
+    return '<div class="tt-member"><div class="tt-avatar" style="background:' + m.bg + ';color:' + m.color + '">' + m.initial + '</div><div><div class="tt-name">' + m.name + '</div><div class="tt-cal">' + m.calName + '</div></div></div>';
+  }).join('');
+  tip.classList.add('show');
+  moveTip(e);
+}
+function moveTip(e) {
+  var tw = tip.offsetWidth||200, th = tip.offsetHeight||120;
+  var x = e.clientX+14, y = e.clientY-10;
+  tip.style.left = (x+tw>window.innerWidth-8 ? x-tw-22 : x) + 'px';
+  tip.style.top  = (y+th>window.innerHeight-8 ? y-th-8 : y) + 'px';
+}
+function hideTip() { tip.classList.remove('show'); }
+document.addEventListener('mousemove', function(e) { if(tip.classList.contains('show')) moveTip(e); });
+
+// モーダル
+function openModal(el) {
+  hideTip();
+  selectedMemberId = null;
+  var ids = JSON.parse(decodeURIComponent(el.dataset.ids));
+  var ms = ids.map(function(id){ for(var i=0;i<MEMBERS.length;i++){if(MEMBERS[i].id===id)return MEMBERS[i];} }).filter(Boolean);
+  document.getElementById('modal-title').textContent = el.dataset.date + ' (' + el.dataset.day + ') ' + el.dataset.time + '〜';
+  document.getElementById('assignee-list').innerHTML = ms.map(function(m) {
+    return '<div class="assignee" id="row-' + m.id + '" onclick="selectMember(' + m.id + ')"><div class="a-avatar" style="background:' + m.bg + ';color:' + m.color + '">' + m.initial + '</div><div><div class="a-name">' + m.name + '</div><div class="a-cal">' + m.calName + '</div></div><span class="check">✓</span></div>';
+  }).join('');
+  document.getElementById('go-btn').disabled = true;
+  document.getElementById('overlay').classList.add('open');
+}
+function selectMember(id) {
+  selectedMemberId = id;
+  document.querySelectorAll('.assignee').forEach(function(r){ r.classList.remove('selected'); });
+  document.getElementById('row-'+id).classList.add('selected');
+  document.getElementById('go-btn').disabled = false;
+}
+function goToTimerex() {
+  var m = null;
+  for(var i=0;i<MEMBERS.length;i++){if(MEMBERS[i].id===selectedMemberId){m=MEMBERS[i];break;}}
+  if (m) window.open(m.timerexUrl, '_blank');
+}
+function closeModal() { document.getElementById('overlay').classList.remove('open'); }
+document.getElementById('overlay').addEventListener('click', function(e) { if(e.target===this) closeModal(); });
+
+// ============================================================
+// 起動
+// ============================================================
+(async function() {
+  var detail = document.getElementById('loading-detail');
+  detail.textContent = '全メンバーの空き時間を並列取得中...';
+  try {
+    slotMap = await fetchAllSlots();
+    var total = 0;
+    var keys = Object.keys(slotMap);
+    for(var k=0;k<keys.length;k++) total += slotMap[keys[k]].length;
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('calendar-area').style.display = 'block';
+    document.getElementById('last-updated').innerHTML =
+      '取得完了: ' + new Date().toLocaleString('ja-JP') + ' (' + total + 'スロット) &nbsp;·&nbsp; <button class="refresh-btn" onclick="location.reload()">更新</button>';
+    renderCalendar();
+  } catch(e) {
+    document.getElementById('loading').style.display = 'none';
+    var err = document.getElementById('error-msg');
+    err.style.display = 'block';
+    err.textContent = '読み込みに失敗しました: ' + e.message;
+    console.error(e);
+  }
+})();
+</script>
+</body>
