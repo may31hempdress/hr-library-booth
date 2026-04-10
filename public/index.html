@@ -340,12 +340,16 @@ function renderCalendar() {
   // 空き枠がある最初〜最後の時間インデックスを求める
   var firstTi = -1, lastTi = -1;
   for (var ti2 = 0; ti2 < TIMES.length; ti2++) {
+    var hasSlot = false;
     for (var di3 = 0; di3 < 7; di3++) {
       if (dates[di3] >= todayStart && (slotMap[toKey(dates[di3], TIMES[ti2])] || []).length > 0) {
-        if (firstTi === -1) firstTi = ti2;
-        lastTi = ti2;
+        hasSlot = true;
         break;
       }
+    }
+    if (hasSlot) {
+      if (firstTi === -1) firstTi = ti2;
+      lastTi = ti2;
     }
   }
   if (firstTi === -1) { firstTi = 0; lastTi = TIMES.length - 1; }
