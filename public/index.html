@@ -100,7 +100,7 @@ main { max-width: 860px; margin: 0 auto; padding: 24px 16px 60px; }
   <div class="header-sub">予約ページ</div>
 </header>
 <main>
-  <h1 class="page-title">WEBミーティング専用ブースを予約する</h1>
+  <h1 class="page-title">WEBミーティング専用ブースの空き時間を選んでご予約ください</h1>
   <p class="page-sub">空いているブースをクリックして、Timerexで予約を確定してください。</p>
   <ul class="desc-list">
     <li>WEBミーティングの時間のみご指定ください。</li>
@@ -111,7 +111,7 @@ main { max-width: 860px; margin: 0 auto; padding: 24px 16px 60px; }
   <div class="notice">
     <span class="notice-icon">ℹ️</span>
     <div>
-      全メンバーの空き時間を順番に読み込むため、<strong>表示まで少しお時間がかかります</strong>（目安：30秒〜1分）。<br>
+      複数のブースの空き時間を順番に読み込むため、<strong>表示まで少しお時間がかかります</strong>（目安：30秒〜1分）。<br>
       空き時間が少ない・表示されない場合は、ページ下部の「<strong>更新</strong>」ボタンを押してみてください。
     </div>
   </div>
@@ -128,8 +128,8 @@ main { max-width: 860px; margin: 0 auto; padding: 24px 16px 60px; }
       <button class="nav-btn" id="btn-next" onclick="changeWeek(1)">次週 →</button>
     </div>
     <div class="legend">
-      <span class="legend-item"><span class="legend-dot" style="background:var(--green-pale);border:1px solid #9FE1CB"></span>1名空き</span>
-      <span class="legend-item"><span class="legend-dot" style="background:#9FE1CB"></span>2名空き</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--green-pale);border:1px solid #9FE1CB"></span>1部屋空き</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#9FE1CB"></span>2部屋空き</span>
       <span class="legend-item"><span class="legend-dot" style="background:var(--green-light)"></span>3〜4名空き</span>
       <span class="legend-item"><span class="legend-dot" style="background:var(--green-mid)"></span>5名以上</span>
     </div>
@@ -360,10 +360,10 @@ function renderCalendar() {
       if (count === 0 || isPast) {
         html += '<div class="cal-cell empty"></div>';
       } else {
-        var cls2 = count===1?'a1':count===2?'a2':count<=4?'a3':count<=6?'a4':'a5plus';
+        var cls2 = count===1?'a1':'a5plus';
         var idsEnc = encodeURIComponent(JSON.stringify(ids));
         var dateStr = (dd.getMonth()+1) + '/' + dd.getDate();
-        html += '<div class="cal-cell ' + cls2 + '" data-ids="' + idsEnc + '" data-date="' + dateStr + '" data-day="' + DAY_JP[di2] + '" data-time="' + time + '" onmouseenter="showTip(event,this)" onmouseleave="hideTip()" onclick="openModal(this)">' + count + '名</div>';
+        html += '<div class="cal-cell ' + cls2 + '" data-ids="' + idsEnc + '" data-date="' + dateStr + '" data-day="' + DAY_JP[di2] + '" data-time="' + time + '" onmouseenter="showTip(event,this)" onmouseleave="hideTip()" onclick="openModal(this)">' + count + '部屋</div>';
       }
     }
   }
