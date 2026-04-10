@@ -230,8 +230,20 @@ function extractSlots(json) {
     var daySlots = json.slots[days[i]];
     for (var j = 0; j < daySlots.length; j++) {
       var s = daySlots[j];
-      if (!s.disable && s.start_datetime) {
-        slots.push(parseSlotDatetime(s.start_datetime));
+      if (!s.disable && s.start_datetime && s.end_datetime) {
+        // 開始〜終了の間の全30分コマを登録
+        var start = new Date(s.start_datetime.replace(/\//g, '-').replace(' ', 'T'));
+        var end = new Date(s.end_datetime.replace(/\//g, '-').replace(' ', 'T'));
+        var cur = new Date(start);
+        while (cur < end) {
+          var y = cur.getFullYear();
+          var mo = ('0'+(cur.getMonth()+1)).slice(-2);
+          var d = ('0'+cur.getDate()).slice(-2);
+          var h = ('0'+cur.getHours()).slice(-2);
+          var mi = ('0'+cur.getMinutes()).slice(-2);
+          slots.push(y+'-'+mo+'-'+d+'T'+h+':'+mi);
+          cur.setMinutes(cur.getMinutes() + 30);
+        }
       }
     }
   }
@@ -290,9 +302,9 @@ async function fetchAllSlots() {
 // ============================================================
 var DAY_JP = ['月','火','水','木','金','土','日'];
 var TIMES = [];
-for (var h = 8; h <= 23; h++) {
+for (var h = 0; h <= 23; h++) {
   TIMES.push(('0'+h).slice(-2) + ':00');
-  if (h < 23) TIMES.push(('0'+h).slice(-2) + ':30');
+  TIMES.push(('0'+h).slice(-2) + ':30');
 }
 
 var weekOffset = 0;
